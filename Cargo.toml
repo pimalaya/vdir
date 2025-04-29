@@ -1,0 +1,30 @@
+[package]
+name = "vdir"
+description = "I/O-free library to manage vdir file systems"
+version = "0.1.0"
+authors = ["soywod <clement.douin@posteo.net>"]
+edition = "2021"
+license = "MIT"
+categories = []
+keywords = ["vdir", "flow", "io-free", "ical", "vcard"]
+homepage = "https://pimalaya.org"
+documentation = "https://docs.rs/vdir-flows/latest/vdir_flows"
+repository = "https://github.com/pimalaya/vdir"
+
+[package.metadata.docs.rs]
+rustdoc-args = ["--cfg", "docsrs"]
+all-features = true
+
+[dev-dependencies]
+env_logger = "0.11"
+fs-flows = { version = "0.1", features = ["std"] }
+tempdir = "0.3"
+
+[dependencies]
+log = "0.4"
+memchr = "2.7"
+fs-flows = { version = "0.1", default-features = false }
+
+[patch.crates-io]
+# fs-flows.git = "https://github.com/pimalaya/fs"
+fs-flows.path = "../fs"
