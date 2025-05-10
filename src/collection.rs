@@ -14,12 +14,10 @@ pub struct Collection {
     /// The path of the collection.
     pub path: PathBuf,
 
-    /// The alternative (display) name of the collection.
+    /// The display name of the collection.
     ///
     /// Files called displayname contain a UTF-8 encoded label, that
     /// may be used to represent the vdir in UIs.
-    ///
-    /// See also [`Self::name`] for the raw directory name.
     pub display_name: Option<String>,
 
     /// The description of the collection.

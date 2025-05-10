@@ -30,9 +30,9 @@ fn list_collections() {
 
     let collections = loop {
         match flow.resume(output) {
-            Ok(collections) => break collections,
             Err(Io::Error(err)) => panic!("{err}"),
             Err(input) => output = Some(handle(input).unwrap()),
+            Ok(collections) => break collections,
         }
     };
 

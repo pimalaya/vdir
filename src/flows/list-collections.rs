@@ -12,7 +12,7 @@ use crate::{
 
 #[derive(Debug)]
 pub enum State {
-    ListCollections(ReadDir),
+    ReadDirs(ReadDir),
     ReadMetadataFiles(HashSet<PathBuf>, ReadFiles),
 }
 
@@ -26,7 +26,7 @@ impl ListCollections {
     pub fn new(root: impl Into<PathBuf>) -> Self {
         let root = root.into();
         let flow = ReadDir::new(&root);
-        let state = State::ListCollections(flow);
+        let state = State::ReadDirs(flow);
 
         Self { root, state }
     }
@@ -34,7 +34,7 @@ impl ListCollections {
     pub fn resume(&mut self, mut io: Option<Io>) -> Result<HashSet<Collection>, Io> {
         loop {
             match &mut self.state {
-                State::ListCollections(flow) => {
+                State::ReadDirs(flow) => {
                     let mut collection_paths = flow.resume(io.take())?;
 
                     collection_paths.retain(|path| {

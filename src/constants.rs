@@ -3,3 +3,4 @@ pub const DESCRIPTION: &'static str = "description";
 pub const COLOR: &'static str = "color";
 
 pub const VCF: &'static str = "vcf";
+pub const ICS: &'static str = "ics";
