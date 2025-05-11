@@ -14,4 +14,7 @@ pub mod flows;
 mod item;
 
 #[doc(inline)]
-pub use self::{collection::Collection, item::Item};
+pub use self::{
+    collection::Collection,
+    item::{Item, ItemKind},
+};

@@ -1,7 +1,7 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 use fs_flows::{
-    flows::{CreateDir, CreateFiles, RemoveFiles},
+    flows::{CreateDir, CreateFiles},
     Io,
 };
 
@@ -13,19 +13,18 @@ use crate::{
 #[derive(Debug)]
 pub enum State {
     CreateDir(CreateDir),
-    RemoveMetadataFiles(RemoveFiles),
     CreateMetadataFiles(CreateFiles),
 }
 
 #[derive(Debug)]
-pub struct SaveCollection {
+pub struct CreateCollection {
     collection: Option<Collection>,
     state: State,
 }
 
-impl SaveCollection {
+impl CreateCollection {
     pub fn new(collection: Collection) -> Self {
-        let flow = CreateDir::new(&collection.path);
+        let flow = CreateDir::new(collection.path());
         let state = State::CreateDir(flow);
 
         Self {
@@ -40,53 +39,30 @@ impl SaveCollection {
                 State::CreateDir(flow) => {
                     flow.resume(io.take())?;
 
-                    let Some(collection) = &self.collection else {
-                        return Err(Io::UnavailableInput);
-                    };
-
-                    let mut files = HashSet::new();
-
-                    if collection.display_name.is_none() {
-                        files.insert(collection.path.join(DISPLAYNAME));
-                    }
-
-                    if collection.description.is_none() {
-                        files.insert(collection.path.join(DESCRIPTION));
-                    }
-
-                    if collection.color.is_none() {
-                        files.insert(collection.path.join(COLOR));
-                    }
-
-                    let flow = RemoveFiles::new(files);
-                    self.state = State::RemoveMetadataFiles(flow);
-                }
-                State::RemoveMetadataFiles(flow) => {
-                    flow.resume(io.take())?;
-
                     let Some(mut collection) = self.collection.take() else {
                         return Err(Io::UnavailableInput);
                     };
 
+                    let collection_path = collection.path();
                     let mut contents = HashMap::new();
 
                     if let Some(name) = collection.display_name.take() {
-                        contents.insert(collection.path.join(DISPLAYNAME), name.into_bytes());
+                        contents.insert(collection_path.join(DISPLAYNAME), name.into_bytes());
                     }
 
                     if let Some(desc) = collection.description.take() {
-                        contents.insert(collection.path.join(DESCRIPTION), desc.into_bytes());
+                        contents.insert(collection_path.join(DESCRIPTION), desc.into_bytes());
                     }
 
                     if let Some(color) = collection.color.take() {
-                        contents.insert(collection.path.join(COLOR), color.into_bytes());
+                        contents.insert(collection_path.join(COLOR), color.into_bytes());
                     }
 
                     if contents.is_empty() {
                         break Ok(());
                     }
 
-                    let flow = CreateFiles::new(contents.into_iter());
+                    let flow = CreateFiles::new(contents);
                     self.state = State::CreateMetadataFiles(flow);
                 }
                 State::CreateMetadataFiles(flow) => {

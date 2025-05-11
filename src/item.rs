@@ -17,14 +17,22 @@ pub struct Item {
 }
 
 impl Item {
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    pub fn contents(&self) -> &[u8] {
+        &self.contents
+    }
+
     pub fn path(&self) -> PathBuf {
         self.collection_path
             .join(&self.name)
-            .with_extension(self.kind.extension())
+            .with_extension(self.kind.as_extension())
     }
 
     pub fn extension(&self) -> &'static str {
-        self.kind.extension()
+        self.kind.as_extension()
     }
 }
 
@@ -35,7 +43,7 @@ pub enum ItemKind {
 }
 
 impl ItemKind {
-    pub fn extension(&self) -> &'static str {
+    pub fn as_extension(&self) -> &'static str {
         match self {
             Self::Vcard => VCF,
             Self::Icalendar => ICS,

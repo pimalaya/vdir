@@ -7,7 +7,7 @@ pub struct DeleteCollection(RemoveDir);
 
 impl DeleteCollection {
     pub fn new(collection: &Collection) -> Self {
-        Self(RemoveDir::new(&collection.path))
+        Self(RemoveDir::new(collection.path()))
     }
 
     pub fn resume(&mut self, io: Option<Io>) -> Result<(), Io> {

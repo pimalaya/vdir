@@ -11,8 +11,17 @@ use std::path::PathBuf;
 /// [metadata]: https://vdirsyncer.pimutils.org/en/stable/vdir.html#metadata
 #[derive(Clone, Debug, Default, Eq, Hash, PartialEq)]
 pub struct Collection {
-    /// The path of the collection.
-    pub path: PathBuf,
+    /// The root path of the collection.
+    ///
+    /// Corresponds to the parent's directory path of the collection.
+    pub root_path: PathBuf,
+
+    /// The name of the collection.
+    ///
+    /// Corresponds to the name of the collection's directory.
+    ///
+    /// See also [`Self::display_name`].
+    pub name: String,
 
     /// The display name of the collection.
     ///
@@ -37,4 +46,10 @@ pub struct Collection {
     /// informal values such as red (as known from CSS, for example)
     /// are allowed. The prefixing # must be present.
     pub color: Option<String>,
+}
+
+impl Collection {
+    pub fn path(&self) -> PathBuf {
+        self.root_path.join(&self.name)
+    }
 }

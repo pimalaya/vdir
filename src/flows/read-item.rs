@@ -22,7 +22,7 @@ impl ReadItem {
         let item_name = item_name.to_string();
         let item_path = collection_path
             .join(&item_name)
-            .with_extension(item_kind.extension());
+            .with_extension(item_kind.as_extension());
 
         Self {
             collection_path,

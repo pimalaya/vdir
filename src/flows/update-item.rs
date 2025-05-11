@@ -14,17 +14,17 @@ pub enum State {
 }
 
 #[derive(Debug)]
-pub struct SaveItem {
+pub struct UpdateItem {
     path: PathBuf,
     path_tmp: PathBuf,
     state: State,
 }
 
-impl SaveItem {
-    pub fn new(item: Item) -> Self {
-        let path = item.collection_path.clone();
+impl UpdateItem {
+    pub fn new(item: &Item, contents: impl IntoIterator<Item = u8>) -> Self {
+        let path = item.path();
         let path_tmp = path.with_extension(format!("{}.tmp", item.extension()));
-        let flow = CreateFile::new(&path_tmp, item.contents);
+        let flow = CreateFile::new(&path_tmp, contents);
         let state = State::CreateTemporaryItem(flow);
 
         Self {
@@ -39,7 +39,7 @@ impl SaveItem {
             match &mut self.state {
                 State::CreateTemporaryItem(flow) => {
                     flow.resume(io.take())?;
-                    let flow = Rename::new(&self.path_tmp, &self.path);
+                    let flow = Rename::new(Some((&self.path_tmp, &self.path)));
                     self.state = State::MoveItem(flow);
                 }
                 State::MoveItem(flow) => {

@@ -18,17 +18,17 @@ pub enum State {
 
 #[derive(Debug)]
 pub struct ListCollections {
-    root: PathBuf,
+    root_path: PathBuf,
     state: State,
 }
 
 impl ListCollections {
-    pub fn new(root: impl Into<PathBuf>) -> Self {
-        let root = root.into();
-        let flow = ReadDir::new(&root);
+    pub fn new(root_path: impl Into<PathBuf>) -> Self {
+        let root_path = root_path.into();
+        let flow = ReadDir::new(&root_path);
         let state = State::ReadDirs(flow);
 
-        Self { root, state }
+        Self { root_path, state }
     }
 
     pub fn resume(&mut self, mut io: Option<Io>) -> Result<HashSet<Collection>, Io> {
@@ -42,7 +42,7 @@ impl ListCollections {
                             return false;
                         };
 
-                        let path = self.root.join(&name);
+                        let path = self.root_path.join(&name);
 
                         if !path.is_dir() {
                             return false;
@@ -75,52 +75,55 @@ impl ListCollections {
 
                     let flow = ReadFiles::new(metadata_paths);
                     self.state = State::ReadMetadataFiles(collection_paths, flow);
-
-                    continue;
                 }
                 State::ReadMetadataFiles(collection_paths, flow) => {
                     let mut metadata = flow.resume(io.take())?;
                     let mut collections = HashSet::new();
 
                     for path in collection_paths.clone() {
+                        let Some(name) = path.file_name() else {
+                            continue;
+                        };
+
                         let display_name = path.join(DISPLAYNAME);
                         let description = path.join(DESCRIPTION);
                         let color = path.join(COLOR);
 
                         let mut collection = Collection {
-                            path,
+                            root_path: self.root_path.clone(),
+                            name: name.to_string_lossy().to_string(),
                             display_name: None,
                             description: None,
                             color: None,
                         };
 
-                        if let Some(ref name) = metadata.remove(&display_name) {
+                        if let Some(name) = &metadata.remove(&display_name) {
                             let name = String::from_utf8_lossy(name);
 
                             if name.trim().is_empty() {
                                 collection.display_name = None
                             } else {
-                                collection.display_name.replace(name.to_string());
+                                collection.display_name = Some(name.to_string());
                             }
                         }
 
-                        if let Some(ref desc) = metadata.remove(&description) {
+                        if let Some(desc) = &metadata.remove(&description) {
                             let desc = String::from_utf8_lossy(desc);
 
                             if desc.trim().is_empty() {
                                 collection.description = None
                             } else {
-                                collection.description.replace(desc.to_string());
+                                collection.description = Some(desc.to_string());
                             }
                         }
 
-                        if let Some(ref color) = metadata.remove(&color) {
+                        if let Some(color) = &metadata.remove(&color) {
                             let color = String::from_utf8_lossy(color);
 
                             if color.trim().is_empty() {
                                 collection.color = None
                             } else {
-                                collection.color.replace(color.to_string());
+                                collection.color = Some(color.to_string());
                             }
                         }
 
