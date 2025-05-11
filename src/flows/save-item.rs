@@ -22,9 +22,9 @@ pub struct SaveItem {
 
 impl SaveItem {
     pub fn new(item: Item) -> Self {
-        let path = item.path.clone();
+        let path = item.collection_path.clone();
         let path_tmp = path.with_extension(format!("{}.tmp", item.extension()));
-        let flow = CreateFile::new(&path_tmp, item.content);
+        let flow = CreateFile::new(&path_tmp, item.contents);
         let state = State::CreateTemporaryItem(flow);
 
         Self {

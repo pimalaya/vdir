@@ -7,7 +7,7 @@ pub struct DeleteItem(RemoveFile);
 
 impl DeleteItem {
     pub fn new(item: &Item) -> Self {
-        Self(RemoveFile::new(&item.path))
+        Self(RemoveFile::new(item.path()))
     }
 
     pub fn resume(&mut self, io: Option<Io>) -> Result<(), Io> {

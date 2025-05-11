@@ -10,26 +10,17 @@ use crate::constants::{ICS, VCF};
 /// See [`crate::Collection`].
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Item {
+    pub collection_path: PathBuf,
     pub kind: ItemKind,
-    pub path: PathBuf,
-    pub content: Vec<u8>,
+    pub name: String,
+    pub contents: Vec<u8>,
 }
 
 impl Item {
-    pub fn vcard(path: impl Into<PathBuf>, content: impl IntoIterator<Item = u8>) -> Self {
-        Self {
-            kind: ItemKind::Vcard,
-            path: path.into(),
-            content: content.into_iter().collect(),
-        }
-    }
-
-    pub fn icalendar(path: impl Into<PathBuf>, content: impl IntoIterator<Item = u8>) -> Self {
-        Self {
-            kind: ItemKind::Icalendar,
-            path: path.into(),
-            content: content.into_iter().collect(),
-        }
+    pub fn path(&self) -> PathBuf {
+        self.collection_path
+            .join(&self.name)
+            .with_extension(self.kind.extension())
     }
 
     pub fn extension(&self) -> &'static str {

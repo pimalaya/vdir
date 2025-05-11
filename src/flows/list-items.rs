@@ -1,4 +1,4 @@
-use std::{collections::HashSet, path::Path};
+use std::{collections::HashSet, path::PathBuf};
 
 use fs_flows::{
     flows::{ReadDir, ReadFiles},
@@ -7,6 +7,7 @@ use fs_flows::{
 
 use crate::{
     constants::{ICS, VCF},
+    item::ItemKind,
     Item,
 };
 
@@ -18,15 +19,20 @@ pub enum State {
 
 #[derive(Debug)]
 pub struct ListItems {
+    collection_path: PathBuf,
     state: State,
 }
 
 impl ListItems {
-    pub fn new(collection_path: impl AsRef<Path>) -> Self {
-        let flow = ReadDir::new(collection_path.as_ref());
+    pub fn new(collection_path: impl Into<PathBuf>) -> Self {
+        let collection_path = collection_path.into();
+        let flow = ReadDir::new(&collection_path);
         let state = State::ReadDir(flow);
 
-        Self { state }
+        Self {
+            collection_path,
+            state,
+        }
     }
 
     pub fn resume(&mut self, mut io: Option<Io>) -> Result<HashSet<Item>, Io> {
@@ -61,14 +67,28 @@ impl ListItems {
                     let mut items = HashSet::new();
 
                     for (path, contents) in contents {
+                        let Some(name) = path.file_stem() else {
+                            continue;
+                        };
+
                         let Some(ext) = path.extension() else {
                             continue;
                         };
 
                         if ext == VCF {
-                            items.insert(Item::vcard(path, contents));
+                            items.insert(Item {
+                                collection_path: self.collection_path.clone(),
+                                kind: ItemKind::Vcard,
+                                name: name.to_string_lossy().to_string(),
+                                contents,
+                            });
                         } else if ext == ICS {
-                            items.insert(Item::icalendar(path, contents));
+                            items.insert(Item {
+                                collection_path: self.collection_path.clone(),
+                                kind: ItemKind::Icalendar,
+                                name: name.to_string_lossy().to_string(),
+                                contents,
+                            });
                         }
                     }
 
