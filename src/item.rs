@@ -1,5 +1,7 @@
 use std::path::PathBuf;
 
+use crate::constants::{ICS, VCF};
+
 /// The vdir collection's item.
 ///
 /// A vdir collection's item is either a vCard (.vcf) or a iCalendar
@@ -8,9 +10,9 @@ use std::path::PathBuf;
 /// See [`crate::Collection`].
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Item {
-    kind: ItemKind,
-    path: PathBuf,
-    content: Vec<u8>,
+    pub kind: ItemKind,
+    pub path: PathBuf,
+    pub content: Vec<u8>,
 }
 
 impl Item {
@@ -29,10 +31,23 @@ impl Item {
             content: content.into_iter().collect(),
         }
     }
+
+    pub fn extension(&self) -> &'static str {
+        self.kind.extension()
+    }
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum ItemKind {
     Vcard,
     Icalendar,
+}
+
+impl ItemKind {
+    pub fn extension(&self) -> &'static str {
+        match self {
+            Self::Vcard => VCF,
+            Self::Icalendar => ICS,
+        }
+    }
 }
