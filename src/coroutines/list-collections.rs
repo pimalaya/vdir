@@ -18,17 +18,17 @@ pub enum State {
 
 #[derive(Debug)]
 pub struct ListCollections {
-    root_path: PathBuf,
+    root: String,
     state: State,
 }
 
 impl ListCollections {
-    pub fn new(root_path: impl Into<PathBuf>) -> Self {
-        let root_path = root_path.into();
-        let fs = ReadDir::new(&root_path);
+    pub fn new(root: impl ToString) -> Self {
+        let root = root.to_string();
+        let fs = ReadDir::new(&root);
         let state = State::ListCollections(fs);
 
-        Self { root_path, state }
+        Self { root, state }
     }
 
     pub fn resume(&mut self, mut input: Option<Io>) -> Result<HashSet<Collection>, Io> {
@@ -36,20 +36,7 @@ impl ListCollections {
             match &mut self.state {
                 State::ListCollections(fs) => {
                     let mut collection_paths = fs.resume(input.take())?;
-
-                    collection_paths.retain(|path| {
-                        let Some(name) = path.file_name() else {
-                            return false;
-                        };
-
-                        let path = self.root_path.join(&name);
-
-                        if !path.is_dir() {
-                            return false;
-                        }
-
-                        true
-                    });
+                    collection_paths.retain(|path| path.is_dir());
 
                     let mut metadata_paths = HashSet::new();
 
@@ -90,8 +77,8 @@ impl ListCollections {
                         let color = path.join(COLOR);
 
                         let mut collection = Collection {
-                            root_path: self.root_path.clone(),
-                            name: name.to_string_lossy().to_string(),
+                            root: self.root.clone(),
+                            id: name.to_string_lossy().to_string(),
                             display_name: None,
                             description: None,
                             color: None,

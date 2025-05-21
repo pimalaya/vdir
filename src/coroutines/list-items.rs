@@ -1,4 +1,4 @@
-use std::{collections::HashSet, path::PathBuf};
+use std::collections::HashSet;
 
 use calcard::{icalendar::ICalendar, vcard::VCard};
 use io_fs::{
@@ -7,6 +7,7 @@ use io_fs::{
 };
 
 use crate::{
+    collection,
     constants::{ICS, VCF},
     item::ItemKind,
     Collection, Item,
@@ -20,18 +21,22 @@ pub enum State {
 
 #[derive(Debug)]
 pub struct ListItems {
-    collection_path: PathBuf,
+    root: String,
+    collection_id: String,
     state: State,
 }
 
 impl ListItems {
     pub fn new(collection: &Collection) -> Self {
-        let collection_path = collection.path();
-        let fs = ReadDir::new(&collection_path);
+        let root = collection.root().to_owned();
+        let collection_id = collection.id().to_owned();
+        let path = collection::to_path_buf(collection);
+        let fs = ReadDir::new(path);
         let state = State::ListItems(fs);
 
         Self {
-            collection_path,
+            root,
+            collection_id,
             state,
         }
     }
@@ -88,9 +93,10 @@ impl ListItems {
                             }
 
                             items.insert(Item {
-                                collection_path: self.collection_path.clone(),
+                                root: self.root.clone(),
+                                collection_id: self.collection_id.clone(),
+                                id: name.to_string_lossy().to_string(),
                                 kind: ItemKind::Ical(ical),
-                                name: name.to_string_lossy().to_string(),
                             });
 
                             continue;
@@ -106,9 +112,10 @@ impl ListItems {
                             }
 
                             items.insert(Item {
-                                collection_path: self.collection_path.clone(),
+                                root: self.root.clone(),
+                                collection_id: self.collection_id.clone(),
+                                id: name.to_string_lossy().to_string(),
                                 kind: ItemKind::Vcard(vcard),
-                                name: name.to_string_lossy().to_string(),
                             });
                         }
                     }

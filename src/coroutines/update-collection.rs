@@ -6,6 +6,7 @@ use io_fs::{
 };
 
 use crate::{
+    collection,
     constants::{COLOR, DESCRIPTION, DISPLAYNAME, TMP},
     Collection,
 };
@@ -23,27 +24,26 @@ pub struct UpdateCollection {
 
 impl UpdateCollection {
     pub fn new(collection: &Collection) -> Self {
-        let mut collection = collection.clone();
-        let collection_path = collection.path();
+        let collection_path = collection::to_path_buf(collection);
 
         let mut contents = HashMap::new();
         let mut rename_paths = Vec::new();
 
-        if let Some(name) = collection.display_name.take() {
+        if let Some(name) = collection.display_name.clone() {
             let path = collection_path.join(DISPLAYNAME);
             let tmp_path = path.with_extension(TMP);
             contents.insert(tmp_path.clone(), name.into_bytes());
             rename_paths.push((tmp_path, path));
         }
 
-        if let Some(desc) = collection.description.take() {
+        if let Some(desc) = collection.description.clone() {
             let path = collection_path.join(DESCRIPTION);
             let tmp_path = path.with_extension(TMP);
             contents.insert(tmp_path.clone(), desc.into_bytes());
             rename_paths.push((tmp_path, path));
         }
 
-        if let Some(color) = collection.color.take() {
+        if let Some(color) = collection.color.clone() {
             let path = collection_path.join(COLOR);
             let tmp_path = path.with_extension(TMP);
             contents.insert(tmp_path.clone(), color.into_bytes());

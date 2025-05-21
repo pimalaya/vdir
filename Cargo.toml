@@ -25,6 +25,7 @@ calcard = "0.1"
 io-fs = { version = "1", default-features = false }
 log = "0.4"
 memchr = "2.7"
+uuid = { version = "1", features = ["v4"] }
 
 [patch.crates-io]
 # io-fs.git = "https://github.com/pimalaya/io-fs"

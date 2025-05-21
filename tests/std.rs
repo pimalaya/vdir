@@ -8,12 +8,12 @@ use tempdir::TempDir;
 #[test]
 fn std() {
     let workdir = TempDir::new("test-vdir-std").unwrap();
-    let root_path = workdir.path();
+    let root = workdir.path().to_string_lossy().to_string();
 
     // should list empty collections
 
     let mut arg = None;
-    let mut list = ListCollections::new(root_path);
+    let mut list = ListCollections::new(&root);
 
     let collections = loop {
         match list.resume(arg) {
@@ -26,23 +26,17 @@ fn std() {
 
     // should create collection without metadata
 
-    let mut collection = Collection {
-        root_path: root_path.to_owned(),
-        name: "collection".into(),
-        display_name: None,
-        description: None,
-        color: None,
-    };
+    let mut collection = Collection::new(&root);
 
     let mut arg = None;
-    let mut create = CreateCollection::new(&collection);
+    let mut create = CreateCollection::new(collection.clone());
 
     while let Err(io) = create.resume(arg) {
         arg = Some(handle(io).unwrap());
     }
 
     let mut arg = None;
-    let mut list = ListCollections::new(&root_path);
+    let mut list = ListCollections::new(&root);
 
     let collections = loop {
         match list.resume(arg) {
@@ -58,7 +52,7 @@ fn std() {
     // should not re-create existing collection
 
     let mut arg = None;
-    let mut create = CreateCollection::new(&collection);
+    let mut create = CreateCollection::new(collection.clone());
 
     loop {
         match create.resume(arg) {
@@ -84,7 +78,7 @@ fn std() {
     }
 
     let mut arg = None;
-    let mut list = ListCollections::new(&root_path);
+    let mut list = ListCollections::new(&root);
 
     let items = loop {
         match list.resume(arg) {
@@ -99,11 +93,11 @@ fn std() {
 
     // should create item
 
-    let mut item = Item {
-        collection_path: collection.path(),
-        name: "item".into(),
-        kind: ItemKind::Vcard(VCard::parse("BEGIN:VCARD\r\nUID: abc123\r\nEND:VCARD\r\n").unwrap()),
-    };
+    let mut item = Item::new(
+        &root,
+        collection.id(),
+        ItemKind::Vcard(VCard::parse("BEGIN:VCARD\r\nUID: abc123\r\nEND:VCARD\r\n").unwrap()),
+    );
 
     let mut arg = None;
     let mut create = CreateItem::new(&item);
@@ -126,9 +120,8 @@ fn std() {
 
     let first_item = items.into_iter().next().unwrap();
 
-    assert_eq!(first_item.name, "item");
     assert_eq!(
-        first_item.contents(),
+        first_item.to_string(),
         "BEGIN:VCARD\r\nUID: abc123\r\nEND:VCARD\r\n"
     );
 
@@ -158,9 +151,8 @@ fn std() {
 
     let item = items.into_iter().next().unwrap();
 
-    assert_eq!(item.name, "item");
     assert_eq!(
-        item.contents(),
+        item.to_string(),
         "BEGIN:VCARD\r\nUID: def456\r\nEND:VCARD\r\n"
     );
 
@@ -209,7 +201,7 @@ fn std() {
     }
 
     let mut arg = None;
-    let mut list = ListCollections::new(root_path);
+    let mut list = ListCollections::new(root);
 
     let collections = loop {
         match list.resume(arg) {
