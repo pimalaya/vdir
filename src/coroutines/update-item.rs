@@ -9,7 +9,7 @@ use crate::Item;
 
 #[derive(Debug)]
 pub enum State {
-    CreateTemporaryItem(CreateFile),
+    CreateTempItem(CreateFile),
     MoveItem(Rename),
 }
 
@@ -21,11 +21,11 @@ pub struct UpdateItem {
 }
 
 impl UpdateItem {
-    pub fn new(item: &Item, contents: impl IntoIterator<Item = u8>) -> Self {
+    pub fn new(item: &Item) -> Self {
         let path = item.path();
         let path_tmp = path.with_extension(format!("{}.tmp", item.extension()));
-        let flow = CreateFile::new(&path_tmp, contents);
-        let state = State::CreateTemporaryItem(flow);
+        let fs = CreateFile::new(&path_tmp, item.contents().into_bytes());
+        let state = State::CreateTempItem(fs);
 
         Self {
             path,
@@ -34,16 +34,16 @@ impl UpdateItem {
         }
     }
 
-    pub fn resume(&mut self, mut io: Option<Io>) -> Result<(), Io> {
+    pub fn resume(&mut self, mut input: Option<Io>) -> Result<(), Io> {
         loop {
             match &mut self.state {
-                State::CreateTemporaryItem(flow) => {
-                    flow.resume(io.take())?;
-                    let flow = Rename::new(Some((&self.path_tmp, &self.path)));
-                    self.state = State::MoveItem(flow);
+                State::CreateTempItem(fs) => {
+                    fs.resume(input.take())?;
+                    let fs = Rename::new(Some((&self.path_tmp, &self.path)));
+                    self.state = State::MoveItem(fs);
                 }
-                State::MoveItem(flow) => {
-                    flow.resume(io.take())?;
+                State::MoveItem(fs) => {
+                    fs.resume(input.take())?;
                     break Ok(());
                 }
             }

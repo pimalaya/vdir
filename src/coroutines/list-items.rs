@@ -1,5 +1,6 @@
 use std::{collections::HashSet, path::PathBuf};
 
+use calcard::{icalendar::ICalendar, vcard::VCard};
 use io_fs::{
     coroutines::{ReadDir, ReadFiles},
     Io,
@@ -8,12 +9,12 @@ use io_fs::{
 use crate::{
     constants::{ICS, VCF},
     item::ItemKind,
-    Item,
+    Collection, Item,
 };
 
 #[derive(Debug)]
 pub enum State {
-    ReadDir(ReadDir),
+    ListItems(ReadDir),
     ReadItems(ReadFiles),
 }
 
@@ -24,10 +25,10 @@ pub struct ListItems {
 }
 
 impl ListItems {
-    pub fn new(collection_path: impl Into<PathBuf>) -> Self {
-        let collection_path = collection_path.into();
-        let flow = ReadDir::new(&collection_path);
-        let state = State::ReadDir(flow);
+    pub fn new(collection: &Collection) -> Self {
+        let collection_path = collection.path();
+        let fs = ReadDir::new(&collection_path);
+        let state = State::ListItems(fs);
 
         Self {
             collection_path,
@@ -35,11 +36,11 @@ impl ListItems {
         }
     }
 
-    pub fn resume(&mut self, mut io: Option<Io>) -> Result<HashSet<Item>, Io> {
+    pub fn resume(&mut self, mut input: Option<Io>) -> Result<HashSet<Item>, Io> {
         loop {
             match &mut self.state {
-                State::ReadDir(flow) => {
-                    let mut item_paths = flow.resume(io.take())?;
+                State::ListItems(fs) => {
+                    let mut item_paths = fs.resume(input.take())?;
 
                     item_paths.retain(|path| {
                         if !path.is_file() {
@@ -57,13 +58,11 @@ impl ListItems {
                         return true;
                     });
 
-                    let flow = ReadFiles::new(item_paths);
-                    self.state = State::ReadItems(flow);
-
-                    continue;
+                    let fs = ReadFiles::new(item_paths);
+                    self.state = State::ReadItems(fs);
                 }
-                State::ReadItems(flow) => {
-                    let contents = flow.resume(io.take())?;
+                State::ReadItems(fs) => {
+                    let contents = fs.resume(input.take())?;
                     let mut items = HashSet::new();
 
                     for (path, contents) in contents {
@@ -75,19 +74,41 @@ impl ListItems {
                             continue;
                         };
 
-                        if ext == VCF {
+                        let Ok(contents) = String::from_utf8(contents) else {
+                            continue;
+                        };
+
+                        if ext == ICS {
+                            let Ok(ical) = ICalendar::parse(contents) else {
+                                continue;
+                            };
+
+                            if ical.uids().collect::<HashSet<_>>().len() != 1 {
+                                continue;
+                            }
+
                             items.insert(Item {
                                 collection_path: self.collection_path.clone(),
-                                kind: ItemKind::Vcard,
+                                kind: ItemKind::Ical(ical),
                                 name: name.to_string_lossy().to_string(),
-                                contents,
                             });
-                        } else if ext == ICS {
+
+                            continue;
+                        }
+
+                        if ext == VCF {
+                            let Ok(vcard) = VCard::parse(contents) else {
+                                continue;
+                            };
+
+                            if vcard.uid().is_none() {
+                                continue;
+                            }
+
                             items.insert(Item {
                                 collection_path: self.collection_path.clone(),
-                                kind: ItemKind::Icalendar,
+                                kind: ItemKind::Vcard(vcard),
                                 name: name.to_string_lossy().to_string(),
-                                contents,
                             });
                         }
                     }

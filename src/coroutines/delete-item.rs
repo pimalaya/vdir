@@ -10,7 +10,7 @@ impl DeleteItem {
         Self(RemoveFile::new(item.path()))
     }
 
-    pub fn resume(&mut self, io: Option<Io>) -> Result<(), Io> {
-        self.0.resume(io)
+    pub fn resume(&mut self, input: Option<Io>) -> Result<(), Io> {
+        self.0.resume(input)
     }
 }

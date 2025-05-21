@@ -22,7 +22,7 @@ impl ReadItem {
         let item_name = item_name.to_string();
         let item_path = collection_path
             .join(&item_name)
-            .with_extension(item_kind.as_extension());
+            .with_extension(item_kind.extension());
 
         Self {
             collection_path,
@@ -37,7 +37,7 @@ impl ReadItem {
     }
 
     pub fn icalendar(collection_path: impl Into<PathBuf>, item_name: impl ToString) -> Self {
-        Self::new(collection_path, item_name, ItemKind::Icalendar)
+        Self::new(collection_path, item_name, ItemKind::Ical)
     }
 
     pub fn resume(&mut self, io: Option<Io>) -> Result<Item, Io> {

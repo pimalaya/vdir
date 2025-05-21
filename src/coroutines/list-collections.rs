@@ -12,7 +12,7 @@ use crate::{
 
 #[derive(Debug)]
 pub enum State {
-    ReadDirs(ReadDir),
+    ListCollections(ReadDir),
     ReadMetadataFiles(HashSet<PathBuf>, ReadFiles),
 }
 
@@ -25,17 +25,17 @@ pub struct ListCollections {
 impl ListCollections {
     pub fn new(root_path: impl Into<PathBuf>) -> Self {
         let root_path = root_path.into();
-        let flow = ReadDir::new(&root_path);
-        let state = State::ReadDirs(flow);
+        let fs = ReadDir::new(&root_path);
+        let state = State::ListCollections(fs);
 
         Self { root_path, state }
     }
 
-    pub fn resume(&mut self, mut io: Option<Io>) -> Result<HashSet<Collection>, Io> {
+    pub fn resume(&mut self, mut input: Option<Io>) -> Result<HashSet<Collection>, Io> {
         loop {
             match &mut self.state {
-                State::ReadDirs(flow) => {
-                    let mut collection_paths = flow.resume(io.take())?;
+                State::ListCollections(fs) => {
+                    let mut collection_paths = fs.resume(input.take())?;
 
                     collection_paths.retain(|path| {
                         let Some(name) = path.file_name() else {
@@ -76,8 +76,8 @@ impl ListCollections {
                     let flow = ReadFiles::new(metadata_paths);
                     self.state = State::ReadMetadataFiles(collection_paths, flow);
                 }
-                State::ReadMetadataFiles(collection_paths, flow) => {
-                    let mut metadata = flow.resume(io.take())?;
+                State::ReadMetadataFiles(collection_paths, fs) => {
+                    let mut metadata = fs.resume(input.take())?;
                     let mut collections = HashSet::new();
 
                     for path in collection_paths.clone() {

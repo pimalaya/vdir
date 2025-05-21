@@ -12,7 +12,7 @@ use crate::{
 
 #[derive(Debug)]
 pub enum State {
-    CreateMetadataFiles(CreateFiles, Vec<(PathBuf, PathBuf)>),
+    CreateMetadataTempFiles(CreateFiles, Vec<(PathBuf, PathBuf)>),
     MoveMetadataFiles(Rename),
 }
 
@@ -22,7 +22,8 @@ pub struct UpdateCollection {
 }
 
 impl UpdateCollection {
-    pub fn new(mut collection: Collection) -> Self {
+    pub fn new(collection: &Collection) -> Self {
+        let mut collection = collection.clone();
         let collection_path = collection.path();
 
         let mut contents = HashMap::new();
@@ -49,22 +50,22 @@ impl UpdateCollection {
             rename_paths.push((tmp_path, path));
         }
 
-        let flow = CreateFiles::new(contents);
-        let state = State::CreateMetadataFiles(flow, rename_paths);
+        let fs = CreateFiles::new(contents);
+        let state = State::CreateMetadataTempFiles(fs, rename_paths);
 
         Self { state }
     }
 
-    pub fn resume(&mut self, mut io: Option<Io>) -> Result<(), Io> {
+    pub fn resume(&mut self, mut input: Option<Io>) -> Result<(), Io> {
         loop {
             match &mut self.state {
-                State::CreateMetadataFiles(flow, rename_paths) => {
-                    flow.resume(io.take())?;
-                    let flow = Rename::new(rename_paths.drain(..));
-                    self.state = State::MoveMetadataFiles(flow);
+                State::CreateMetadataTempFiles(fs, rename_paths) => {
+                    fs.resume(input.take())?;
+                    let fs = Rename::new(rename_paths.drain(..));
+                    self.state = State::MoveMetadataFiles(fs);
                 }
-                State::MoveMetadataFiles(flow) => {
-                    flow.resume(io.take())?;
+                State::MoveMetadataFiles(fs) => {
+                    fs.resume(input.take())?;
                     break Ok(());
                 }
             }

@@ -1,10 +1,10 @@
 use std::path::PathBuf;
 
-/// The vdir collection.
+/// The Vdir collection.
 ///
-/// A vdir collection is a directory that contains only files
-/// (items). A collection may have [metadata], as defined in the
-/// vdirsyncer standard.
+/// Represents a directory that contains only files (items). A
+/// collection may have [metadata], as defined in the vdirsyncer
+/// standard.
 ///
 /// See [`crate::Item`].
 ///
