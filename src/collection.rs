@@ -1,4 +1,7 @@
-use std::path::PathBuf;
+use std::{
+    hash::{Hash, Hasher},
+    path::{Path, PathBuf},
+};
 
 use uuid::Uuid;
 
@@ -11,10 +14,9 @@ use uuid::Uuid;
 /// See [`crate::Item`].
 ///
 /// [metadata]: https://vdirsyncer.pimutils.org/en/stable/vdir.html#metadata
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Collection {
-    pub(crate) root: String,
-    pub(crate) id: String,
+    pub path: PathBuf,
 
     /// The name of the collection.
     ///
@@ -42,25 +44,24 @@ pub struct Collection {
 }
 
 impl Collection {
-    pub fn new(root: impl ToString) -> Collection {
+    pub fn new(root: impl AsRef<Path>) -> Collection {
         Collection {
-            root: root.to_string(),
-            id: Uuid::new_v4().to_string(),
+            path: root.as_ref().join(Uuid::new_v4().to_string()),
             display_name: None,
             description: None,
             color: None,
         }
     }
+}
 
-    pub fn root(&self) -> &str {
-        &self.root
-    }
-
-    pub fn id(&self) -> &str {
-        &self.id
+impl Hash for Collection {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.path.hash(state);
     }
 }
 
-pub fn to_path_buf(collection: &Collection) -> PathBuf {
-    PathBuf::from(&collection.root).join(&collection.id)
+impl AsRef<Path> for Collection {
+    fn as_ref(&self) -> &Path {
+        &self.path
+    }
 }

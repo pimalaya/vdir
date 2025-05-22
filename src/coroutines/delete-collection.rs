@@ -1,14 +1,13 @@
-use io_fs::{coroutines::RemoveDir, Io};
+use std::path::Path;
 
-use crate::{collection, Collection};
+use io_fs::{coroutines::RemoveDir, Io};
 
 #[derive(Debug)]
 pub struct DeleteCollection(RemoveDir);
 
 impl DeleteCollection {
-    pub fn new(collection: &Collection) -> Self {
-        let path = collection::to_path_buf(collection);
-        Self(RemoveDir::new(path))
+    pub fn new(path: impl AsRef<Path>) -> Self {
+        Self(RemoveDir::new(path.as_ref()))
     }
 
     pub fn resume(&mut self, input: Option<Io>) -> Result<(), Io> {

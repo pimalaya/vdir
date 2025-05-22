@@ -1,14 +1,13 @@
-use io_fs::{coroutines::RemoveFile, Io};
+use std::path::Path;
 
-use crate::{item, Item};
+use io_fs::{coroutines::RemoveFile, Io};
 
 #[derive(Debug)]
 pub struct DeleteItem(RemoveFile);
 
 impl DeleteItem {
-    pub fn new(item: &Item) -> Self {
-        let path = item::to_path_buf(item);
-        Self(RemoveFile::new(path))
+    pub fn new(path: impl AsRef<Path>) -> Self {
+        Self(RemoveFile::new(path.as_ref()))
     }
 
     pub fn resume(&mut self, input: Option<Io>) -> Result<(), Io> {

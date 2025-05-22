@@ -8,7 +8,7 @@ use tempdir::TempDir;
 #[test]
 fn std() {
     let workdir = TempDir::new("test-vdir-std").unwrap();
-    let root = workdir.path().to_string_lossy().to_string();
+    let root = workdir.path();
 
     // should list empty collections
 
@@ -71,7 +71,7 @@ fn std() {
     collection.color = Some("#000000".into());
 
     let mut arg = None;
-    let mut update = UpdateCollection::new(&collection);
+    let mut update = UpdateCollection::new(collection.clone());
 
     while let Err(io) = update.resume(arg) {
         arg = Some(handle(io).unwrap());
@@ -94,13 +94,12 @@ fn std() {
     // should create item
 
     let mut item = Item::new(
-        &root,
-        collection.id(),
+        &collection,
         ItemKind::Vcard(VCard::parse("BEGIN:VCARD\r\nUID: abc123\r\nEND:VCARD\r\n").unwrap()),
     );
 
     let mut arg = None;
-    let mut create = CreateItem::new(&item);
+    let mut create = CreateItem::new(item.clone());
 
     while let Err(io) = create.resume(arg) {
         arg = Some(handle(io).unwrap());
@@ -131,7 +130,7 @@ fn std() {
         ItemKind::Vcard(VCard::parse("BEGIN:VCARD\r\nUID: def456\r\nEND:VCARD\r\n").unwrap());
 
     let mut arg = None;
-    let mut update = UpdateItem::new(&item);
+    let mut update = UpdateItem::new(item);
 
     while let Err(io) = update.resume(arg) {
         arg = Some(handle(io).unwrap());
@@ -173,7 +172,7 @@ fn std() {
     // should delete item
 
     let mut arg = None;
-    let mut delete = DeleteItem::new(&item);
+    let mut delete = DeleteItem::new(item);
 
     while let Err(io) = delete.resume(arg) {
         arg = Some(handle(io).unwrap());

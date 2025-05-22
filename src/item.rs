@@ -1,12 +1,15 @@
 use std::{
     hash::{Hash, Hasher},
-    path::PathBuf,
+    path::{Path, PathBuf},
 };
 
 use calcard::{icalendar::ICalendar, vcard::VCard};
 use uuid::Uuid;
 
-use crate::constants::{ICS, VCF};
+use crate::{
+    constants::{ICS, VCF},
+    Collection,
+};
 
 /// The Vdir collection's item.
 ///
@@ -15,42 +18,32 @@ use crate::constants::{ICS, VCF};
 /// See [`crate::Collection`].
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Item {
-    pub(crate) root: String,
-    pub(crate) collection_id: String,
-    pub(crate) id: String,
+    pub path: PathBuf,
 
     /// The item kind.
     pub kind: ItemKind,
 }
 
 impl Item {
-    pub fn new(root: impl ToString, collection_id: impl ToString, kind: ItemKind) -> Item {
-        Item {
-            root: root.to_string(),
-            collection_id: collection_id.to_string(),
-            id: Uuid::new_v4().to_string(),
-            kind,
-        }
-    }
+    pub fn new(collection: &Collection, kind: ItemKind) -> Item {
+        let path = collection
+            .path
+            .join(Uuid::new_v4().to_string())
+            .with_extension(kind.extension());
 
-    pub fn root(&self) -> &str {
-        &self.root
-    }
-
-    pub fn collection_id(&self) -> &str {
-        &self.collection_id
-    }
-
-    pub fn id(&self) -> &str {
-        &self.id
+        Item { path, kind }
     }
 }
 
 impl Hash for Item {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        self.root.hash(state);
-        self.collection_id.hash(state);
-        self.id.hash(state);
+        self.path.hash(state);
+    }
+}
+
+impl AsRef<Path> for Item {
+    fn as_ref(&self) -> &Path {
+        &self.path
     }
 }
 
@@ -76,16 +69,4 @@ impl ItemKind {
             Self::Vcard(_) => VCF,
         }
     }
-}
-
-pub fn to_path_buf(item: &Item) -> PathBuf {
-    PathBuf::from(&item.root)
-        .join(&item.collection_id)
-        .join(&item.id)
-        .with_extension(item.kind.extension())
-}
-
-pub fn to_path_buf_tmp(item: &Item) -> PathBuf {
-    let ext = item.kind.extension();
-    to_path_buf(item).with_extension(format!("{ext}.tmp"))
 }

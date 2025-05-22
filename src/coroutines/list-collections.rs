@@ -1,4 +1,7 @@
-use std::{collections::HashSet, path::PathBuf};
+use std::{
+    collections::HashSet,
+    path::{Path, PathBuf},
+};
 
 use io_fs::{
     coroutines::{ReadDir, ReadFiles},
@@ -18,17 +21,15 @@ pub enum State {
 
 #[derive(Debug)]
 pub struct ListCollections {
-    root: String,
     state: State,
 }
 
 impl ListCollections {
-    pub fn new(root: impl ToString) -> Self {
-        let root = root.to_string();
-        let fs = ReadDir::new(&root);
+    pub fn new(root: impl AsRef<Path>) -> Self {
+        let fs = ReadDir::new(root.as_ref());
         let state = State::ListCollections(fs);
 
-        Self { root, state }
+        Self { state }
     }
 
     pub fn resume(&mut self, mut input: Option<Io>) -> Result<HashSet<Collection>, Io> {
@@ -68,17 +69,12 @@ impl ListCollections {
                     let mut collections = HashSet::new();
 
                     for path in collection_paths.clone() {
-                        let Some(name) = path.file_name() else {
-                            continue;
-                        };
-
                         let display_name = path.join(DISPLAYNAME);
                         let description = path.join(DESCRIPTION);
                         let color = path.join(COLOR);
 
                         let mut collection = Collection {
-                            root: self.root.clone(),
-                            id: name.to_string_lossy().to_string(),
+                            path,
                             display_name: None,
                             description: None,
                             color: None,

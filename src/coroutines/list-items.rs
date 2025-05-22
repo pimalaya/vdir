@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::{collections::HashSet, path::Path};
 
 use calcard::{icalendar::ICalendar, vcard::VCard};
 use io_fs::{
@@ -7,10 +7,9 @@ use io_fs::{
 };
 
 use crate::{
-    collection,
     constants::{ICS, VCF},
     item::ItemKind,
-    Collection, Item,
+    Item,
 };
 
 #[derive(Debug)]
@@ -21,24 +20,15 @@ pub enum State {
 
 #[derive(Debug)]
 pub struct ListItems {
-    root: String,
-    collection_id: String,
     state: State,
 }
 
 impl ListItems {
-    pub fn new(collection: &Collection) -> Self {
-        let root = collection.root().to_owned();
-        let collection_id = collection.id().to_owned();
-        let path = collection::to_path_buf(collection);
-        let fs = ReadDir::new(path);
+    pub fn new(path: impl AsRef<Path>) -> Self {
+        let fs = ReadDir::new(path.as_ref());
         let state = State::ListItems(fs);
 
-        Self {
-            root,
-            collection_id,
-            state,
-        }
+        Self { state }
     }
 
     pub fn resume(&mut self, mut input: Option<Io>) -> Result<HashSet<Item>, Io> {
@@ -71,10 +61,6 @@ impl ListItems {
                     let mut items = HashSet::new();
 
                     for (path, contents) in contents {
-                        let Some(name) = path.file_stem() else {
-                            continue;
-                        };
-
                         let Some(ext) = path.extension() else {
                             continue;
                         };
@@ -93,9 +79,7 @@ impl ListItems {
                             }
 
                             items.insert(Item {
-                                root: self.root.clone(),
-                                collection_id: self.collection_id.clone(),
-                                id: name.to_string_lossy().to_string(),
+                                path,
                                 kind: ItemKind::Ical(ical),
                             });
 
@@ -112,9 +96,7 @@ impl ListItems {
                             }
 
                             items.insert(Item {
-                                root: self.root.clone(),
-                                collection_id: self.collection_id.clone(),
-                                id: name.to_string_lossy().to_string(),
+                                path,
                                 kind: ItemKind::Vcard(vcard),
                             });
                         }

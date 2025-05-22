@@ -5,7 +5,7 @@ use io_fs::{
     Io,
 };
 
-use crate::{item, Item};
+use crate::{constants::TMP, Item};
 
 #[derive(Debug)]
 pub enum State {
@@ -21,14 +21,13 @@ pub struct UpdateItem {
 }
 
 impl UpdateItem {
-    pub fn new(item: &Item) -> Self {
-        let path = item::to_path_buf(item);
-        let path_tmp = item::to_path_buf_tmp(item);
+    pub fn new(item: Item) -> Self {
+        let path_tmp = item.path.with_extension(TMP);
         let fs = CreateFile::new(&path_tmp, item.to_string().into_bytes());
         let state = State::CreateTempItem(fs);
 
         Self {
-            path,
+            path: item.path,
             path_tmp,
             state,
         }

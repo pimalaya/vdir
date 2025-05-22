@@ -6,7 +6,6 @@ use io_fs::{
 };
 
 use crate::{
-    collection,
     constants::{COLOR, DESCRIPTION, DISPLAYNAME},
     Collection,
 };
@@ -25,7 +24,7 @@ pub struct CreateCollection {
 
 impl CreateCollection {
     pub fn new(collection: Collection) -> Self {
-        let fs = CreateDir::new(collection::to_path_buf(&collection));
+        let fs = CreateDir::new(&collection.path);
         let state = State::CreateCollection(fs);
 
         Self { collection, state }
@@ -40,20 +39,19 @@ impl CreateCollection {
                     let display_name = self.collection.display_name.clone();
                     let description = self.collection.description.take();
                     let color = self.collection.color.take();
-                    let collection_path = collection::to_path_buf(&self.collection);
 
                     let mut contents = HashMap::new();
 
                     if let Some(name) = display_name {
-                        contents.insert(collection_path.join(DISPLAYNAME), name.into_bytes());
+                        contents.insert(self.collection.path.join(DISPLAYNAME), name.into_bytes());
                     }
 
                     if let Some(desc) = description {
-                        contents.insert(collection_path.join(DESCRIPTION), desc.into_bytes());
+                        contents.insert(self.collection.path.join(DESCRIPTION), desc.into_bytes());
                     }
 
                     if let Some(color) = color {
-                        contents.insert(collection_path.join(COLOR), color.into_bytes());
+                        contents.insert(self.collection.path.join(COLOR), color.into_bytes());
                     }
 
                     if contents.is_empty() {

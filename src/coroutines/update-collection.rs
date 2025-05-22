@@ -6,7 +6,6 @@ use io_fs::{
 };
 
 use crate::{
-    collection,
     constants::{COLOR, DESCRIPTION, DISPLAYNAME, TMP},
     Collection,
 };
@@ -23,28 +22,26 @@ pub struct UpdateCollection {
 }
 
 impl UpdateCollection {
-    pub fn new(collection: &Collection) -> Self {
-        let collection_path = collection::to_path_buf(collection);
-
+    pub fn new(mut collection: Collection) -> Self {
         let mut contents = HashMap::new();
         let mut rename_paths = Vec::new();
 
-        if let Some(name) = collection.display_name.clone() {
-            let path = collection_path.join(DISPLAYNAME);
+        if let Some(name) = collection.display_name.take() {
+            let path = collection.path.join(DISPLAYNAME);
             let tmp_path = path.with_extension(TMP);
             contents.insert(tmp_path.clone(), name.into_bytes());
             rename_paths.push((tmp_path, path));
         }
 
-        if let Some(desc) = collection.description.clone() {
-            let path = collection_path.join(DESCRIPTION);
+        if let Some(desc) = collection.description.take() {
+            let path = collection.path.join(DESCRIPTION);
             let tmp_path = path.with_extension(TMP);
             contents.insert(tmp_path.clone(), desc.into_bytes());
             rename_paths.push((tmp_path, path));
         }
 
-        if let Some(color) = collection.color.clone() {
-            let path = collection_path.join(COLOR);
+        if let Some(color) = collection.color.take() {
+            let path = collection.path.join(COLOR);
             let tmp_path = path.with_extension(TMP);
             contents.insert(tmp_path.clone(), color.into_bytes());
             rename_paths.push((tmp_path, path));
